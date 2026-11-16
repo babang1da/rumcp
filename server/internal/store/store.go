@@ -102,6 +102,12 @@ type Repository interface {
 	ConsumeToken(ctx context.Context, id string) error
 
 	RecordCall(ctx context.Context, userID, connector, tool, status string) error
+	// StartCall opens a call_log row and returns its id. The MCP bridge opens
+	// the row before the external call, so the daily limit counts a call even
+	// while it is still running.
+	StartCall(ctx context.Context, userID, connector, tool, status string) (int64, error)
+	// FinishCall sets the status of a row opened by StartCall.
+	FinishCall(ctx context.Context, id int64, status string) error
 	Usage(ctx context.Context, userID string, since time.Time) (Usage, error)
 
 	CreateLead(ctx context.Context, l Lead) error
