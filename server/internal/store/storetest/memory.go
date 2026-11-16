@@ -21,14 +21,17 @@ type Memory struct {
 	tokens        map[string]store.OAuthToken
 	consumed      map[string]bool
 	calls         []call
+	nextCallID    int64
 	leads         []store.Lead
 	usersByYandex map[string]string
 	now           func() time.Time
 }
 
 type call struct {
+	id        int64
 	userID    string
 	connector string
+	tool      string
 	status    string
 	ts        time.Time
 }
@@ -165,11 +168,39 @@ func (m *Memory) ConsumeToken(_ context.Context, id string) error {
 }
 
 // RecordCall implements store.Repository.
-func (m *Memory) RecordCall(_ context.Context, userID, connector, _ string, status string) error {
+func (m *Memory) RecordCall(_ context.Context, userID, connector, tool, status string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.calls = append(m.calls, call{userID: userID, connector: connector, status: status, ts: m.now()})
+	m.appendCall(userID, connector, tool, status)
 	return nil
+}
+
+// StartCall implements store.Repository.
+func (m *Memory) StartCall(_ context.Context, userID, connector, tool, status string) (int64, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.appendCall(userID, connector, tool, status), nil
+}
+
+// FinishCall implements store.Repository.
+func (m *Memory) FinishCall(_ context.Context, id int64, status string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for i := range m.calls {
+		if m.calls[i].id == id {
+			m.calls[i].status = status
+			return nil
+		}
+	}
+	return store.ErrNotFound
+}
+
+func (m *Memory) appendCall(userID, connector, tool, status string) int64 {
+	m.nextCallID++
+	m.calls = append(m.calls, call{
+		id: m.nextCallID, userID: userID, connector: connector, tool: tool, status: status, ts: m.now(),
+	})
+	return m.nextCallID
 }
 
 // Usage implements store.Repository.

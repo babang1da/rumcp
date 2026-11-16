@@ -28,8 +28,10 @@ import (
 	"github.com/babang1da/rumcp/server/internal/store"
 )
 
-// Daily call statuses written to call_log.
+// Daily call statuses written to call_log. A call opens its row with
+// statusPending and gets the final status when it ends.
 const (
+	statusPending   = "pending"
 	statusOK        = "ok"
 	statusError     = "error"
 	statusLimit     = "limit"
@@ -50,6 +52,8 @@ type Repository interface {
 	AccountByUser(ctx context.Context, userID, provider string) (store.Account, error)
 	SaveAccount(ctx context.Context, a store.Account) error
 	RecordCall(ctx context.Context, userID, connector, tool, status string) error
+	StartCall(ctx context.Context, userID, connector, tool, status string) (int64, error)
+	FinishCall(ctx context.Context, id int64, status string) error
 	Usage(ctx context.Context, userID string, since time.Time) (store.Usage, error)
 }
 
@@ -172,53 +176,70 @@ func (b *Bridge) call(ctx context.Context, userID string, tool registered, raw j
 		return errorResult("Нет активной сессии. Подключите RuMCP заново.")
 	}
 
-	args, err := normalize(tool.schema, raw)
-	if err != nil {
-		b.record(ctx, userID, tool, statusError)
-		return errorResult("Неверные аргументы: " + err.Error())
-	}
-
-	// The limit is checked against call_log and the call is written to it in
-	// one step: two parallel calls of the same user must not both take the last
-	// slot. Calls of different users do not block each other.
+	// The limit, the journal row of this call and the Yandex token are handled
+	// under the lock of the user: the row opened here is what the next call
+	// counts, so parallel calls cannot overshoot the limit, and a token refresh
+	// runs once. The connector call itself runs outside the lock, so one user's
+	// calls do not queue behind a slow Yandex response.
 	unlock := b.lockUser(userID)
-	defer unlock()
 
 	usage, err := b.deps.Repo.Usage(ctx, userID, b.dayStart())
 	if err != nil {
 		b.logger().Error("mcp: usage", "error", err, "user", userID)
 		b.record(ctx, userID, tool, statusError)
+		unlock()
 		return errorResult("Не удалось проверить дневной лимит, повторите запрос позже.")
 	}
 	limit := b.limit()
 	if usage.CallsToday >= limit {
 		b.record(ctx, userID, tool, statusLimit)
+		unlock()
 		return errorResult(fmt.Sprintf(
-			"Дневной лимит исчерпан: %d из %d вызовов за сутки. Лимит обновится после полуночи UTC; в кабинете видно, сколько вызовов осталось.",
-			usage.CallsToday, limit))
+			"Дневной лимит исчерпан: %d вызовов в сутки на пользователя. Лимит обновится после полуночи UTC; сколько вызовов осталось, видно в кабинете.",
+			limit))
 	}
 
 	accessToken, err := b.accessToken(ctx, userID)
-	switch {
-	case errors.Is(err, ErrNoAccount):
-		b.record(ctx, userID, tool, statusNoAccount)
-		return errorResult("Аккаунт Яндекса не подключён. Войдите в кабинет " + b.cabinetURL() + ", подключите аккаунт Яндекса и повторите запрос.")
-	case errors.Is(err, ErrReconnect):
-		b.logger().Warn("mcp: yandex token", "error", err, "user", userID)
-		b.record(ctx, userID, tool, statusError)
-		return errorResult("Срок действия токена Яндекса истёк. Подключите аккаунт заново в кабинете " + b.cabinetURL() + ".")
-	case err != nil:
-		b.logger().Error("mcp: yandex token", "error", err, "user", userID)
-		b.record(ctx, userID, tool, statusError)
-		return errorResult("Не удалось получить токен Яндекса, повторите запрос позже.")
+	if err != nil {
+		status := statusError
+		if errors.Is(err, ErrNoAccount) {
+			status = statusNoAccount
+		}
+		b.record(ctx, userID, tool, status)
+		unlock()
+
+		switch {
+		case errors.Is(err, ErrNoAccount):
+			return errorResult("Аккаунт Яндекса не подключён. Войдите в кабинет " + b.cabinetURL() + ", подключите аккаунт Яндекса и повторите запрос.")
+		case errors.Is(err, ErrReconnect):
+			b.logger().Warn("mcp: yandex token", "error", err, "user", userID)
+			return errorResult("Срок действия токена Яндекса истёк. Подключите аккаунт заново в кабинете " + b.cabinetURL() + ".")
+		default:
+			b.logger().Error("mcp: yandex token", "error", err, "user", userID)
+			return errorResult("Не удалось получить токен Яндекса, повторите запрос позже.")
+		}
+	}
+
+	callID, err := b.deps.Repo.StartCall(ctx, userID, tool.connector, tool.tool.Name, statusPending)
+	if err != nil {
+		b.logger().Error("mcp: start call", "error", err, "user", userID)
+		unlock()
+		return errorResult("Не удалось записать вызов, повторите запрос позже.")
+	}
+	unlock()
+
+	args, err := normalize(tool.schema, raw)
+	if err != nil {
+		b.finish(ctx, callID, statusError)
+		return errorResult("Неверные аргументы: " + err.Error())
 	}
 
 	payload, err := tool.tool.Call(ctx, connectors.Env{AccessToken: accessToken}, args)
 	if err != nil {
-		b.record(ctx, userID, tool, statusError)
+		b.finish(ctx, callID, statusError)
 		return errorResult(err.Error())
 	}
-	b.record(ctx, userID, tool, statusOK)
+	b.finish(ctx, callID, statusOK)
 
 	text, err := json.Marshal(payload)
 	if err != nil {
@@ -244,11 +265,20 @@ func normalize(schema *jsonschema.Resolved, raw json.RawMessage) (json.RawMessag
 	return json.Marshal(args)
 }
 
-// record writes the call to call_log. A journal failure is logged: the call
-// itself already happened and the user should get its result.
+// record writes a finished call to call_log. A journal failure is logged: the
+// call itself already happened and the user should get its result. The row is
+// written even when the client cancelled the request — the journal is the
+// product metric, and there is nothing to cancel in a finished insert.
 func (b *Bridge) record(ctx context.Context, userID string, tool registered, status string) {
-	if err := b.deps.Repo.RecordCall(ctx, userID, tool.connector, tool.tool.Name, status); err != nil {
+	if err := b.deps.Repo.RecordCall(context.WithoutCancel(ctx), userID, tool.connector, tool.tool.Name, status); err != nil {
 		b.logger().Error("mcp: call log", "error", err, "user", userID, "connector", tool.connector, "tool", tool.tool.Name)
+	}
+}
+
+// finish closes the row opened by StartCall with the final status.
+func (b *Bridge) finish(ctx context.Context, callID int64, status string) {
+	if err := b.deps.Repo.FinishCall(context.WithoutCancel(ctx), callID, status); err != nil {
+		b.logger().Error("mcp: finish call", "error", err, "id", callID, "status", status)
 	}
 }
 

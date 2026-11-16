@@ -188,6 +188,27 @@ func (p *Postgres) RecordCall(ctx context.Context, userID, connector, tool, stat
 	return nil
 }
 
+// StartCall opens a call journal row and returns its id.
+func (p *Postgres) StartCall(ctx context.Context, userID, connector, tool, status string) (int64, error) {
+	var id int64
+	err := p.pool.QueryRow(ctx,
+		`insert into call_log (user_id, connector, tool, status) values ($1::uuid, $2, $3, $4) returning id`,
+		userID, connector, tool, status).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("store: start call: %w", err)
+	}
+	return id, nil
+}
+
+// FinishCall sets the status of a call journal row.
+func (p *Postgres) FinishCall(ctx context.Context, id int64, status string) error {
+	_, err := p.pool.Exec(ctx, `update call_log set status = $2 where id = $1`, id, status)
+	if err != nil {
+		return fmt.Errorf("store: finish call: %w", err)
+	}
+	return nil
+}
+
 // Usage sums the calls of a user since the given moment.
 func (p *Postgres) Usage(ctx context.Context, userID string, since time.Time) (Usage, error) {
 	rows, err := p.pool.Query(ctx,

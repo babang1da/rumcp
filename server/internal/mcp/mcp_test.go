@@ -32,6 +32,7 @@ const (
 
 // call is one row the bridge wrote to call_log.
 type call struct {
+	id        int64
 	userID    string
 	connector string
 	tool      string
@@ -43,13 +44,39 @@ type journal struct {
 	*storetest.Memory
 	mu    sync.Mutex
 	calls []call
+	index map[int64]int
 }
 
 func (j *journal) RecordCall(ctx context.Context, userID, connector, tool, status string) error {
-	j.mu.Lock()
-	j.calls = append(j.calls, call{userID: userID, connector: connector, tool: tool, status: status})
-	j.mu.Unlock()
+	j.note(call{userID: userID, connector: connector, tool: tool, status: status})
 	return j.Memory.RecordCall(ctx, userID, connector, tool, status)
+}
+
+func (j *journal) StartCall(ctx context.Context, userID, connector, tool, status string) (int64, error) {
+	id, err := j.Memory.StartCall(ctx, userID, connector, tool, status)
+	if err != nil {
+		return 0, err
+	}
+	j.mu.Lock()
+	j.index[id] = len(j.calls)
+	j.calls = append(j.calls, call{id: id, userID: userID, connector: connector, tool: tool, status: status})
+	j.mu.Unlock()
+	return id, nil
+}
+
+func (j *journal) FinishCall(ctx context.Context, id int64, status string) error {
+	j.mu.Lock()
+	if i, ok := j.index[id]; ok {
+		j.calls[i].status = status
+	}
+	j.mu.Unlock()
+	return j.Memory.FinishCall(ctx, id, status)
+}
+
+func (j *journal) note(row call) {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	j.calls = append(j.calls, row)
 }
 
 func (j *journal) all() []call {
@@ -141,7 +168,7 @@ func newEnv(t *testing.T, opts ...option) *env {
 
 	ctx := context.Background()
 	mem := storetest.New()
-	repo := &journal{Memory: mem}
+	repo := &journal{Memory: mem, index: map[int64]int{}}
 
 	key := make([]byte, 32)
 	for i := range key {
@@ -622,5 +649,36 @@ func TestConcurrentDailyLimit(t *testing.T) {
 	}
 	if got := len(e.repo.all()); got != calls {
 		t.Errorf("call_log rows = %d, want %d", got, calls)
+	}
+}
+
+// TestLimitBeforeValidation covers the order of the checks: an argument error
+// is a call like any other, so the daily limit is checked first and a client
+// that keeps sending broken arguments still gets "лимит исчерпан".
+func TestLimitBeforeValidation(t *testing.T) {
+	e := newEnv(t, withLimit(1))
+	session := connect(t, e.endpoint, accessToken)
+
+	if result := callTool(t, session, "metrika_counters", map[string]any{}); result.IsError {
+		t.Fatalf("first call failed: %s", text(t, result))
+	}
+
+	result := callTool(t, session, "metrika_table", map[string]any{})
+	if !result.IsError {
+		t.Fatal("call over the limit must fail")
+	}
+	if body := text(t, result); !strings.Contains(body, "Дневной лимит") {
+		t.Errorf("message: %s", body)
+	}
+	if body := text(t, result); strings.Contains(body, "Неверные аргументы") {
+		t.Errorf("arguments validated before the limit: %s", body)
+	}
+
+	calls := e.repo.all()
+	if len(calls) != 2 {
+		t.Fatalf("call_log rows = %d, want 2", len(calls))
+	}
+	if calls[1].status != "limit" || calls[1].tool != "table" {
+		t.Errorf("second row: %+v", calls[1])
 	}
 }
