@@ -152,7 +152,9 @@ func (b *Bridge) server(userID string) *sdk.Server {
 		Logger: b.deps.Logger,
 		Instructions: "RuMCP gives read-only access to the Yandex marketing stack of the signed-in user. " +
 			"Start with metrika_counters to learn counter ids, then run reports with metrika_table, " +
-			"metrika_bytime, metrika_goals and metrika_traffic_sources.",
+			"metrika_bytime, metrika_goals and metrika_traffic_sources. " +
+			"For Yandex Webmaster start with webmaster_sites to learn site ids, then use " +
+			"webmaster_indexing, webmaster_search_queries, webmaster_diagnostics and webmaster_sitemaps.",
 	})
 
 	for _, tool := range b.tools {

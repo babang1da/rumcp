@@ -11,6 +11,7 @@ import (
 	"github.com/babang1da/rumcp/server/internal/config"
 	"github.com/babang1da/rumcp/server/internal/connectors"
 	"github.com/babang1da/rumcp/server/internal/connectors/metrika"
+	"github.com/babang1da/rumcp/server/internal/connectors/webmaster"
 	mcpbridge "github.com/babang1da/rumcp/server/internal/mcp"
 	"github.com/babang1da/rumcp/server/internal/oauth"
 	"github.com/babang1da/rumcp/server/internal/secret"
@@ -66,7 +67,7 @@ func NewRouterWithYandex(cfg config.Config, repo store.Repository, yandex auth.Y
 	bridge, err := mcpbridge.New(mcpbridge.Deps{
 		Repo:       repo,
 		Box:        box,
-		Connectors: []connectors.Connector{metrika.New()},
+		Connectors: []connectors.Connector{metrika.New(), webmaster.New()},
 		DailyLimit: cfg.DailyLimit,
 		Yandex:     mcpbridge.NewYandexRefresher(cfg.YandexClientID, cfg.YandexClientSecret),
 		BaseURL:    cfg.BaseURL,
