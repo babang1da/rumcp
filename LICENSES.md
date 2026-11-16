@@ -20,6 +20,18 @@ MIT permits use, copy, modification and redistribution with the copyright and
 permission notice; the RuMCP code in `server/internal/connectors/metrika` is
 original, so nothing of this notice needs to travel with it.
 
+### webkoth/yandex-mcp — MIT
+
+- Source: https://github.com/webkoth/yandex-mcp
+- License: MIT
+- Used for: the set of read-only Webmaster tools (sites, indexing summary,
+  popular search queries, diagnostics, sitemaps) of
+  `server/internal/connectors/webmaster`.
+
+Same as above: only the choice of questions shaped the tool list, the RuMCP code
+in `server/internal/connectors/webmaster` is written from the public Webmaster
+API v4 docs and contains nothing of that project.
+
 ## Dependencies
 
 Go module dependencies carry their own licenses; the direct ones are:
