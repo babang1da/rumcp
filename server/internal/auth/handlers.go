@@ -3,7 +3,9 @@ package auth
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -51,7 +53,9 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if h.Cfg.DevLogin {
-		h.signIn(w, r, h.Cfg.TestToken, "", 0, "metrika:read webmaster:read")
+		// Пока нет приложения Яндекса (ZHC-877), живого профиля взять негде:
+		// пользователь dev собирается из env-токена без похода в login.yandex.ru.
+		h.signInWithProfile(w, r, devProfile(h.Cfg.TestToken), h.Cfg.TestToken, "", 0, devScope)
 		return
 	}
 
@@ -122,15 +126,19 @@ func (h *Handler) CurrentUser(r *http.Request) (store.User, bool) {
 	return user, true
 }
 
-// signIn stores the Yandex token sealed, opens a session and redirects.
+// signIn loads the Yandex profile of a token and opens the session.
 func (h *Handler) signIn(w http.ResponseWriter, r *http.Request, accessToken, refreshToken string, expiresIn int, scope string) {
-	ctx := r.Context()
-
-	profile, err := h.Yandex.Profile(ctx, accessToken)
+	profile, err := h.Yandex.Profile(r.Context(), accessToken)
 	if err != nil {
 		writeError(w, http.StatusBadGateway, "yandex_profile_failed")
 		return
 	}
+	h.signInWithProfile(w, r, profile, accessToken, refreshToken, expiresIn, scope)
+}
+
+// signInWithProfile stores the token sealed, opens a session and redirects.
+func (h *Handler) signInWithProfile(w http.ResponseWriter, r *http.Request, profile YandexProfile, accessToken, refreshToken string, expiresIn int, scope string) {
+	ctx := r.Context()
 
 	user, err := h.Repo.UpsertUser(ctx, store.User{
 		YandexID: profile.ID,
@@ -169,6 +177,21 @@ func (h *Handler) signIn(w http.ResponseWriter, r *http.Request, accessToken, re
 
 	h.Session.Set(w, user.ID)
 	http.Redirect(w, r, h.Session.TakeReturnPath(w, r), http.StatusFound)
+}
+
+// devScope is the scope of the dev account: the connectors the service reads.
+const devScope = "metrika:read webmaster:read"
+
+// devProfile builds the dev user from YANDEX_TEST_TOKEN without a Yandex call.
+// The id is derived from the token, so one token is one user across restarts.
+func devProfile(testToken string) YandexProfile {
+	sum := sha256.Sum256([]byte(testToken))
+	return YandexProfile{
+		ID:    "dev-" + hex.EncodeToString(sum[:8]),
+		Login: "dev",
+		Email: "dev@localhost",
+		Name:  "Dev user (YANDEX_TEST_TOKEN)",
+	}
 }
 
 func (h *Handler) now() time.Time {

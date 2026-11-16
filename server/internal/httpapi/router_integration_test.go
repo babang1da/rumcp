@@ -303,8 +303,8 @@ func TestMCPClientConnectsEndToEnd(t *testing.T) {
 		t.Fatalf("account = %v, want connected", account)
 	}
 	user, _ := cabinet["user"].(map[string]any)
-	if user["login"] != "egor" {
-		t.Fatalf("user = %v", user)
+	if user["login"] != "dev" {
+		t.Fatalf("user = %v, want the dev profile of YANDEX_TEST_TOKEN", user)
 	}
 
 	// 6. A lead for a connector that is not released yet lands in the store.
