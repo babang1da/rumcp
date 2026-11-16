@@ -27,6 +27,14 @@ services:
       PORT: 8080
       LOG_LEVEL: ${LOG_LEVEL:-info}
       DATABASE_URL: postgres://${POSTGRES_USER:-rumcp}:${POSTGRES_PASSWORD:-rumcp}@postgres:5432/${POSTGRES_DB:-rumcp}?sslmode=disable
+      BASE_URL: ${BASE_URL:-http://localhost:8080}
+      # Значения по умолчанию только для локального запуска; в проде свои секреты.
+      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY:-dev-only-token-encryption-key-32}
+      SESSION_SECRET: ${SESSION_SECRET:-dev-only-session-secret}
+      DAILY_LIMIT: ${DAILY_LIMIT:-100}
+      YANDEX_CLIENT_ID: ${YANDEX_CLIENT_ID:-}
+      YANDEX_CLIENT_SECRET: ${YANDEX_CLIENT_SECRET:-}
+      YANDEX_TEST_TOKEN: ${YANDEX_TEST_TOKEN:-}
     ports:
       - "${SERVER_PORT:-8080}:8080"
     depends_on:
