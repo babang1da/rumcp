@@ -126,14 +126,51 @@ func TestDevLoginSealsYandexToken(t *testing.T) {
 		t.Fatalf("stored token opens to %q, want %q", opened, testToken)
 	}
 
+	if f.yandex.gotToken != "" {
+		t.Fatalf("dev login called Yandex with %q, want a profile built from the env token", f.yandex.gotToken)
+	}
+
 	req := httptest.NewRequest(http.MethodGet, "/api/me", nil)
 	req.AddCookie(sessionCookie)
 	user, ok := f.handler.CurrentUser(req)
 	if !ok {
 		t.Fatal("CurrentUser did not resolve the session")
 	}
-	if user.Login != "egor" || user.Email != "egor@example.com" {
-		t.Fatalf("user = %+v, want the Yandex profile", user)
+	if user.Login != "dev" || user.Email != "dev@localhost" {
+		t.Fatalf("user = %+v, want the dev profile", user)
+	}
+}
+
+// TestDevLoginWithoutYandex replays the QA defect: no Yandex application and no
+// live token, so the profile call would fail — the dev login still has to work.
+func TestDevLoginWithoutYandex(t *testing.T) {
+	f := newFixture(t, true)
+	f.yandex.profileErr = errors.New("yandex is unreachable")
+
+	recorder := httptest.NewRecorder()
+	f.handler.Login(recorder, httptest.NewRequest(http.MethodGet, "/oauth/yandex/login", nil))
+	if recorder.Code != http.StatusFound {
+		t.Fatalf("status %d (%s), want 302", recorder.Code, recorder.Body.String())
+	}
+	if cookieNamed(recorder.Result().Cookies(), "rumcp_session") == nil {
+		t.Fatal("no session cookie for a dev login")
+	}
+	if users := f.repo.Users(); len(users) != 1 {
+		t.Fatalf("%d users after a dev login, want 1", len(users))
+	}
+	if f.yandex.gotToken != "" {
+		t.Fatalf("dev login called Yandex with %q", f.yandex.gotToken)
+	}
+
+	// The same token is the same user: a second login updates, never duplicates.
+	second := httptest.NewRecorder()
+	f.handler.Login(second, httptest.NewRequest(http.MethodGet, "/oauth/yandex/login", nil))
+	users := f.repo.Users()
+	if len(users) != 1 {
+		t.Fatalf("%d users after a second dev login, want 1", len(users))
+	}
+	if users[0].YandexID == "" || users[0].Login != "dev" {
+		t.Fatalf("dev user = %+v", users[0])
 	}
 }
 
