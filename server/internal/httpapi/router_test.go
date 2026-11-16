@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/babang1da/rumcp/server/internal/config"
@@ -60,5 +61,24 @@ func TestHealthzRejectsOtherMethods(t *testing.T) {
 
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Errorf("status = %d, want %d", rec.Code, http.StatusMethodNotAllowed)
+	}
+}
+
+// TestMCPRequiresBearer проверяет, что /mcp без токена сервиса получает 401 и
+// WWW-Authenticate с адресом метаданных — по нему MCP-клиент находит OAuth.
+func TestMCPRequiresBearer(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"initialize"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json, text/event-stream")
+	rec := httptest.NewRecorder()
+
+	testRouter(t).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusUnauthorized)
+	}
+	challenge := rec.Header().Get("WWW-Authenticate")
+	if !strings.Contains(challenge, "Bearer") || !strings.Contains(challenge, "resource_metadata") {
+		t.Errorf("WWW-Authenticate = %q", challenge)
 	}
 }

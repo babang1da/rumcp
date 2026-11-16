@@ -9,13 +9,16 @@ import (
 	"github.com/babang1da/rumcp/server/internal/api"
 	"github.com/babang1da/rumcp/server/internal/auth"
 	"github.com/babang1da/rumcp/server/internal/config"
+	"github.com/babang1da/rumcp/server/internal/connectors"
+	"github.com/babang1da/rumcp/server/internal/connectors/metrika"
+	mcpbridge "github.com/babang1da/rumcp/server/internal/mcp"
 	"github.com/babang1da/rumcp/server/internal/oauth"
 	"github.com/babang1da/rumcp/server/internal/secret"
 	"github.com/babang1da/rumcp/server/internal/store"
 )
 
-// NewRouter возвращает маршруты сервиса на одном домене: /healthz, OAuth 2.1 для
-// MCP-клиентов, вход через Яндекс и API кабинета. /mcp появляется в ZHC-881.
+// NewRouter возвращает маршруты сервиса на одном домене: /healthz, /mcp, OAuth 2.1
+// для MCP-клиентов, вход через Яндекс и API кабинета.
 func NewRouter(cfg config.Config, repo store.Repository) (http.Handler, error) {
 	return NewRouterWithYandex(cfg, repo, nil)
 }
@@ -60,9 +63,24 @@ func NewRouterWithYandex(cfg config.Config, repo store.Repository, yandex auth.Y
 		Session:    session,
 		DailyLimit: cfg.DailyLimit,
 	}
+	bridge, err := mcpbridge.New(mcpbridge.Deps{
+		Repo:       repo,
+		Box:        box,
+		Connectors: []connectors.Connector{metrika.New()},
+		DailyLimit: cfg.DailyLimit,
+		Yandex:     mcpbridge.NewYandexRefresher(cfg.YandexClientID, cfg.YandexClientSecret),
+		BaseURL:    cfg.BaseURL,
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", healthz(repo))
+
+	// Удалённый MCP для Claude, ChatGPT, Cursor и других клиентов. Без Bearer
+	// сервиса запрос получает 401 и WWW-Authenticate от OAuth-обработчика.
+	mux.Handle("/mcp", bridge.Handler(oauthHandler))
 
 	// OAuth 2.1 для MCP-клиентов.
 	mux.HandleFunc("GET /.well-known/oauth-authorization-server", oauthHandler.Metadata)
