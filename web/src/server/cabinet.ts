@@ -1,5 +1,7 @@
 /** Загрузка данных кабинета: web ходит только в `/api/*` сервиса на Go, не в БД. */
 
+import { baseUrlFor } from './url'
+
 export type Me = {
   user: { id: string; login: string; email: string; name: string }
   account: {
@@ -18,23 +20,12 @@ export type CabinetState =
 
 export const DEFAULT_API_URL = 'http://localhost:8080'
 
-/**
- * Адрес MCP. Основной источник — `PUBLIC_URL` (адрес сервиса без `/mcp`);
- * запасной — заголовки прокси: берётся первое значение, хост проверяется.
- */
+/** Адрес MCP: публичный адрес сервиса плюс `/mcp`. */
 export function mcpUrlFor(
   request: Request,
   publicUrl: string | undefined = process.env.PUBLIC_URL,
 ): string {
-  if (publicUrl) return `${publicUrl.replace(/\/+$/, '')}/mcp`
-
-  const url = new URL(request.url)
-  const first = (name: string) =>
-    request.headers.get(name)?.split(',')[0].trim() || undefined
-  const host = first('x-forwarded-host') ?? first('host')
-  const validHost = host && /^[a-z0-9.-]+(:\d{1,5})?$/i.test(host) ? host : url.host
-  const proto = first('x-forwarded-proto') === 'http' ? 'http' : first('x-forwarded-proto') === 'https' ? 'https' : url.protocol.replace(':', '')
-  return `${proto}://${validHost}/mcp`
+  return `${baseUrlFor(request, publicUrl)}/mcp`
 }
 
 /** Дата одинаково на сервере и в браузере: зона задана явно. */
