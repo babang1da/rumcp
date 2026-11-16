@@ -8,7 +8,7 @@ the runner is missing, every pull request sits in `queued` with no job started.
 
 | | |
 |---|---|
-| GitHub | `babang1da/rumcp`, repo-scoped runner `rumcp-dokploy` (id 3) |
+| GitHub | `babang1da/rumcp`, repo-scoped runner `rumcp-dokploy` (the numeric id changes on every re-registration; match by name) |
 | Host | the Dokploy server, compose project `rumcp` / service `gh-runner-rumcp` |
 | Image | `myoung34/github-runner:latest` (runner 2.338.x) |
 | Labels | `self-hosted`, `mcp_server`, `rumcp` (+ the automatic `Linux`, `X64`) |
