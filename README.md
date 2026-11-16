@@ -72,7 +72,7 @@ cd web && npm ci && npm run build && npm test
 
 Migrations use golang-migrate file names (`server/migrations/NNNN_name.up.sql` / `.down.sql`) and are applied with the `migrate` CLI against `DATABASE_URL`.
 
-CI runs on every pull request to `develop` on a self-hosted runner: `go vet` and `go test` in `server/`, `npm run build` and `npm test` in `web/`. The runner's host, compose service, labels and recovery steps: [`docs/ops/self-hosted-runner.md`](docs/ops/self-hosted-runner.md).
+CI runs on every pull request to `develop` on a self-hosted runner: `go vet` and `go test` in `server/`, `npm run build` and `npm test` in `web/`.
 
 ## Monetisation
 
