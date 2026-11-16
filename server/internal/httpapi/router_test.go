@@ -5,13 +5,33 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/babang1da/rumcp/server/internal/config"
+	"github.com/babang1da/rumcp/server/internal/store/storetest"
 )
+
+// testRouter собирает маршруты на пустом in-memory хранилище.
+func testRouter(t *testing.T) http.Handler {
+	t.Helper()
+	key := make([]byte, 32)
+	cfg := config.Config{
+		BaseURL:       "http://localhost:8080",
+		TokenKey:      key,
+		SessionSecret: []byte("0123456789abcdef"),
+		DailyLimit:    100,
+	}
+	router, err := NewRouter(cfg, storetest.New())
+	if err != nil {
+		t.Fatalf("NewRouter() error = %v", err)
+	}
+	return router
+}
 
 func TestHealthz(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	rec := httptest.NewRecorder()
 
-	NewRouter().ServeHTTP(rec, req)
+	testRouter(t).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
@@ -36,7 +56,7 @@ func TestHealthzRejectsOtherMethods(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/healthz", nil)
 	rec := httptest.NewRecorder()
 
-	NewRouter().ServeHTTP(rec, req)
+	testRouter(t).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Errorf("status = %d, want %d", rec.Code, http.StatusMethodNotAllowed)
