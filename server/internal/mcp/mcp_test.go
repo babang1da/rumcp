@@ -579,3 +579,48 @@ func TestMetrikaError(t *testing.T) {
 		t.Errorf("call_log: %+v", calls)
 	}
 }
+
+// TestConcurrentDailyLimit covers parallel calls of one user: the limit must
+// hold even when the calls arrive at the same time.
+func TestConcurrentDailyLimit(t *testing.T) {
+	e := newEnv(t)
+	session := connect(t, e.endpoint, accessToken)
+
+	const calls = 110
+	results := make([]*sdk.CallToolResult, calls)
+	var wg sync.WaitGroup
+	for i := 0; i < calls; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			result, err := session.CallTool(context.Background(), &sdk.CallToolParams{
+				Name:      "metrika_counters",
+				Arguments: map[string]any{},
+			})
+			if err != nil {
+				t.Errorf("call %d: %v", i, err)
+				return
+			}
+			results[i] = result
+		}(i)
+	}
+	wg.Wait()
+
+	allowed, rejected := 0, 0
+	for _, result := range results {
+		if result == nil {
+			continue
+		}
+		if result.IsError {
+			rejected++
+			continue
+		}
+		allowed++
+	}
+	if allowed != 100 || rejected != calls-100 {
+		t.Errorf("allowed = %d, rejected = %d, want 100 and %d", allowed, rejected, calls-100)
+	}
+	if got := len(e.repo.all()); got != calls {
+		t.Errorf("call_log rows = %d, want %d", got, calls)
+	}
+}

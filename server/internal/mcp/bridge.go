@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/google/jsonschema-go/jsonschema"
@@ -74,6 +75,17 @@ type Deps struct {
 type Bridge struct {
 	deps  Deps
 	tools []registered
+
+	// limits guards locks: the daily limit is checked and journalled in one
+	// step per user, so parallel calls of one user cannot overshoot it.
+	limits sync.Mutex
+	locks  map[string]*userLock
+}
+
+// userLock serializes the tool calls of one user.
+type userLock struct {
+	mu   sync.Mutex
+	refs int
 }
 
 // registered is one tool of one connector, ready for /mcp.
@@ -96,7 +108,7 @@ func New(deps Deps) (*Bridge, error) {
 		deps.DailyLimit = defaultLimit
 	}
 
-	b := &Bridge{deps: deps}
+	b := &Bridge{deps: deps, locks: map[string]*userLock{}}
 	seen := map[string]bool{}
 	for _, connector := range deps.Connectors {
 		for _, tool := range connector.Tools() {
@@ -165,6 +177,12 @@ func (b *Bridge) call(ctx context.Context, userID string, tool registered, raw j
 		b.record(ctx, userID, tool, statusError)
 		return errorResult("Неверные аргументы: " + err.Error())
 	}
+
+	// The limit is checked against call_log and the call is written to it in
+	// one step: two parallel calls of the same user must not both take the last
+	// slot. Calls of different users do not block each other.
+	unlock := b.lockUser(userID)
+	defer unlock()
 
 	usage, err := b.deps.Repo.Usage(ctx, userID, b.dayStart())
 	if err != nil {
@@ -239,6 +257,30 @@ func (b *Bridge) limit() int {
 		return defaultLimit
 	}
 	return b.deps.DailyLimit
+}
+
+// lockUser serializes the tool calls of one user and returns the release
+// function. Locks are dropped when nobody holds them, so the map stays small.
+func (b *Bridge) lockUser(userID string) func() {
+	b.limits.Lock()
+	lock := b.locks[userID]
+	if lock == nil {
+		lock = &userLock{}
+		b.locks[userID] = lock
+	}
+	lock.refs++
+	b.limits.Unlock()
+
+	lock.mu.Lock()
+	return func() {
+		lock.mu.Unlock()
+		b.limits.Lock()
+		lock.refs--
+		if lock.refs == 0 {
+			delete(b.locks, userID)
+		}
+		b.limits.Unlock()
+	}
 }
 
 // dayStart is the beginning of the current UTC day, the window of the limit.
