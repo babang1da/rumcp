@@ -42,7 +42,12 @@ services:
         condition: service_healthy
 
   web:
-    build: ./web
+    build:
+      context: ./web
+      args:
+        # Публичные значения SEO и аналитики; пустые — счётчик и тег не рендерятся.
+        VITE_METRIKA_ID: ${VITE_METRIKA_ID:-}
+        VITE_WEBMASTER_VERIFICATION: ${VITE_WEBMASTER_VERIFICATION:-}
     environment:
       PORT: 3000
       HOST: 0.0.0.0

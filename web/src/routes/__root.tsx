@@ -1,6 +1,11 @@
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 
+import { metrikaCounterId, metrikaSnippet, webmasterVerificationMeta } from '../seo/counters'
 import appCss from '../styles.css?url'
+
+/** Счётчик и подтверждение Вебмастера приходят только из env: пустое значение — тегов нет. */
+const metrikaId = metrikaCounterId(import.meta.env.VITE_METRIKA_ID)
+const verification = webmasterVerificationMeta(import.meta.env.VITE_WEBMASTER_VERIFICATION)
 
 export const Route = createRootRoute({
   head: () => ({
@@ -20,6 +25,7 @@ export const Route = createRootRoute({
         content:
           'Удалённый MCP-сервер для Яндекс Метрики и Вебмастера: один адрес, вход через Яндекс, без установки.',
       },
+      ...(verification ? [verification] : []),
     ],
     links: [
       {
@@ -39,6 +45,21 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+
+        {metrikaId && (
+          <>
+            <script dangerouslySetInnerHTML={{ __html: metrikaSnippet(metrikaId) }} />
+            <noscript>
+              <div>
+                <img
+                  src={`https://mc.yandex.ru/watch/${metrikaId}`}
+                  style={{ position: 'absolute', left: '-9999px' }}
+                  alt=""
+                />
+              </div>
+            </noscript>
+          </>
+        )}
 
         <Scripts />
       </body>
