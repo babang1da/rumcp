@@ -3,7 +3,7 @@ import { useState } from 'react'
 
 import { CopyField } from '../components/CopyField'
 import { Layout, LoginButton } from '../components/Layout'
-import { usagePercent } from '../server/cabinet'
+import { formatDate, usagePercent } from '../server/cabinet'
 import { getCabinet } from '../server/functions'
 
 export const Route = createFileRoute('/cabinet')({
@@ -118,8 +118,4 @@ function Disconnect() {
       {failed && <p className="error" role="alert">Не получилось отключить. Попробуйте ещё раз.</p>}
     </>
   )
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
 }

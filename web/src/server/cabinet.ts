@@ -18,15 +18,33 @@ export type CabinetState =
 
 export const DEFAULT_API_URL = 'http://localhost:8080'
 
-/** Адрес MCP на том же домене, с которого пришёл запрос. */
-export function mcpUrlFor(request: Request): string {
-  const headers = request.headers
-  const host = headers.get('x-forwarded-host') ?? headers.get('host')
+/**
+ * Адрес MCP. Основной источник — `PUBLIC_URL` (адрес сервиса без `/mcp`);
+ * запасной — заголовки прокси: берётся первое значение, хост проверяется.
+ */
+export function mcpUrlFor(
+  request: Request,
+  publicUrl: string | undefined = process.env.PUBLIC_URL,
+): string {
+  if (publicUrl) return `${publicUrl.replace(/\/+$/, '')}/mcp`
+
   const url = new URL(request.url)
-  const proto =
-    headers.get('x-forwarded-proto')?.split(',')[0].trim() ??
-    url.protocol.replace(':', '')
-  return `${proto}://${host ?? url.host}/mcp`
+  const first = (name: string) =>
+    request.headers.get(name)?.split(',')[0].trim() || undefined
+  const host = first('x-forwarded-host') ?? first('host')
+  const validHost = host && /^[a-z0-9.-]+(:\d{1,5})?$/i.test(host) ? host : url.host
+  const proto = first('x-forwarded-proto') === 'http' ? 'http' : first('x-forwarded-proto') === 'https' ? 'https' : url.protocol.replace(':', '')
+  return `${proto}://${validHost}/mcp`
+}
+
+/** Дата одинаково на сервере и в браузере: зона задана явно. */
+export function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
 }
 
 export async function loadCabinet(
@@ -37,6 +55,7 @@ export async function loadCabinet(
   try {
     const response = await fetchImpl(`${apiUrl}/api/me`, {
       headers: { cookie: request.headers.get('cookie') ?? '' },
+      signal: AbortSignal.timeout(3000),
     })
     if (response.status === 401) return { status: 'anonymous' }
     if (!response.ok) return { status: 'error' }

@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 
 export function CopyField({ value, label }: { value: string; label: string }) {
+  const id = useId()
   const [copied, setCopied] = useState(false)
 
   async function copy() {
@@ -15,9 +16,9 @@ export function CopyField({ value, label }: { value: string; label: string }) {
 
   return (
     <div className="copy-field">
-      <label htmlFor="mcp-url">{label}</label>
+      <label htmlFor={id}>{label}</label>
       <div className="copy-row">
-        <input id="mcp-url" readOnly value={value} onFocus={(e) => e.currentTarget.select()} />
+        <input id={id} readOnly value={value} onFocus={(e) => e.currentTarget.select()} />
         <button type="button" className="button button-quiet" onClick={copy}>
           {copied ? 'Скопировано' : 'Скопировать'}
         </button>

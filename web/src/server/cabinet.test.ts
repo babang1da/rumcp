@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { loadCabinet, mcpUrlFor, usagePercent } from './cabinet'
+import { formatDate, loadCabinet, mcpUrlFor, usagePercent } from './cabinet'
 
 const request = new Request('http://localhost:3000/cabinet', {
   headers: { cookie: 'session=abc' },
@@ -53,7 +53,25 @@ describe('mcpUrlFor', () => {
     const proxied = new Request('http://web:3000/', {
       headers: { 'x-forwarded-host': 'rumcp.example', 'x-forwarded-proto': 'https' },
     })
-    expect(mcpUrlFor(proxied)).toBe('https://rumcp.example/mcp')
+    expect(mcpUrlFor(proxied, undefined)).toBe('https://rumcp.example/mcp')
+  })
+
+  it('PUBLIC_URL важнее заголовков', () => {
+    const spoofed = new Request('http://web:3000/', {
+      headers: { 'x-forwarded-host': 'evil.example' },
+    })
+    expect(mcpUrlFor(spoofed, 'https://rumcp.example/')).toBe('https://rumcp.example/mcp')
+  })
+
+  it('берёт первое значение списка и отбрасывает мусорный хост', () => {
+    const list = new Request('http://web:3000/', {
+      headers: { 'x-forwarded-host': 'a.example, b.example', 'x-forwarded-proto': 'https, http' },
+    })
+    expect(mcpUrlFor(list, undefined)).toBe('https://a.example/mcp')
+    const junk = new Request('http://web:3000/', {
+      headers: { 'x-forwarded-host': 'a.example/<x>' },
+    })
+    expect(mcpUrlFor(junk, undefined)).toBe('http://web:3000/mcp')
   })
 })
 
@@ -62,5 +80,11 @@ describe('usagePercent', () => {
     expect(usagePercent(12, 100)).toBe(12)
     expect(usagePercent(150, 100)).toBe(100)
     expect(usagePercent(5, 0)).toBe(0)
+  })
+})
+
+describe('formatDate', () => {
+  it('форматирует в UTC независимо от зоны процесса', () => {
+    expect(formatDate('2026-11-10T23:30:00Z')).toBe('10 ноября 2026 г.')
   })
 })
