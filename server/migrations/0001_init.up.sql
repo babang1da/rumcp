@@ -1,0 +1,3 @@
+-- 0001_init — каркасная миграция, схему не создаёт.
+-- Таблицы users, accounts, oauth_clients, oauth_tokens, call_log и leads
+-- появятся в следующей карточке эпика (ZHC-880).

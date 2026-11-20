@@ -20,14 +20,63 @@ One remote MCP URL, OAuth sign-in, no tokens to generate, nothing to self-host.
 
 Later, by demand: VK Ads, Avito, Wildberries, Ozon, amoCRM, Bitrix24.
 
-## Architecture (v1)
+## Architecture
 
-- One Next.js app (TypeScript): landing, cabinet, `/api/mcp` (Streamable HTTP, MCP TypeScript SDK).
-- MCP auth: OAuth 2.1 for the MCP client; Yandex OAuth for the upstream account.
-- Postgres: users, connected accounts (upstream tokens encrypted at rest), tool-call log (usage and limits).
-- Read-only tools by default; write tools are annotated and added per connector later.
-- Connectors live in `src/connectors/<name>/`, each exporting its tool list — adding a service touches one directory.
-- Prod: Dokploy. Branches: `develop` → PR → `main`.
+One repository, two services, one database, one domain.
+
+- `web/` — TanStack Start (React, SSR): landing, SEO pages «MCP для <сервис>», connection instructions, cabinet. Talks to the Go API only; it never opens a database connection.
+- `server/` — Go: MCP bridge (Streamable HTTP, official MCP Go SDK), OAuth 2.1 for MCP clients, Yandex OAuth sign-in, encryption of upstream tokens, call log, daily call limit, cabinet API. One connector = one directory `server/internal/connectors/<name>/` with its tool list.
+- **Postgres** — users, connected accounts (tokens encrypted at rest), call log. The Go service owns the schema and the migrations in `server/migrations`; `web/` has no access to it.
+- **One domain, proxy-level routing:** `/mcp`, `/oauth/*`, `/.well-known/*`, `/api/*` → Go; everything else → `web`.
+- **Prod:** Dokploy — two containers plus Postgres. Branches: `develop` → PR → `main`.
+
+```
+.
+├── docker-compose.yml          # postgres + server + web
+├── server/                     # Go service
+│   ├── cmd/server/             # entry point
+│   ├── internal/config/        # settings from env
+│   ├── internal/connectors/    # connector contract, one directory per service
+│   ├── internal/httpapi/       # HTTP routes
+│   └── migrations/             # schema migrations, owned by the Go service
+└── web/                        # TanStack Start app (SSR)
+    └── src/routes/             # pages and server routes
+```
+
+Read-only tools by default; write tools are annotated and added per connector later.
+
+## Local development
+
+Everything runs in Docker Compose:
+
+```bash
+cp .env.example .env   # optional, defaults work as is
+docker compose up -d
+```
+
+Compose publishes no host ports (traffic goes through the proxy over the Docker network). Reach the DB via `exec`:
+
+```bash
+docker compose exec postgres psql -U rumcp -d rumcp                  # database
+```
+
+Services without Docker:
+
+```bash
+cd server && DATABASE_URL='postgres://rumcp:rumcp@localhost:5432/rumcp?sslmode=disable' go run ./cmd/server
+cd web && npm install && npm run dev
+```
+
+Checks:
+
+```bash
+cd server && go vet ./... && go test ./...
+cd web && npm ci && npm run build && npm test
+```
+
+Migrations use golang-migrate file names (`server/migrations/NNNN_name.up.sql` / `.down.sql`) and are applied with the `migrate` CLI against `DATABASE_URL`.
+
+CI runs on every pull request to `develop` on a self-hosted runner: `go vet` and `go test` in `server/`, `npm run build` and `npm test` in `web/`. The runner's host, compose service, labels and recovery steps: [`docs/ops/self-hosted-runner.md`](docs/ops/self-hosted-runner.md).
 
 ## Monetisation
 
