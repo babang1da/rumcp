@@ -52,8 +52,12 @@ Everything runs in Docker Compose:
 ```bash
 cp .env.example .env   # optional, defaults work as is
 docker compose up -d
-curl -f localhost:8080/healthz   # Go service
-curl -f localhost:3000/healthz   # web
+```
+
+Compose publishes no host ports (traffic goes through the proxy over the Docker network). Reach the DB via `exec`:
+
+```bash
+docker compose exec postgres psql -U rumcp -d rumcp                  # database
 ```
 
 Services without Docker:
