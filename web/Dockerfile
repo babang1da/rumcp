@@ -13,15 +13,15 @@ ENV VITE_METRIKA_ID=$VITE_METRIKA_ID \
 
 RUN npm run build
 
-FROM node:24-alpine
+FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:6abfcb367ebc291572c774c1592a986be2ab26a2486f73093401327495a5962a
 
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=3000 \
     HOST=0.0.0.0
-USER node
 
-COPY --from=build --chown=node:node /app/.output ./.output
+COPY --from=build --chown=65532:65532 /app/.output ./.output
 
 EXPOSE 3000
-CMD ["node", ".output/server/index.mjs"]
+# Образ distroless: ENTRYPOINT уже `node`, поэтому только путь к скрипту (exec-форма).
+CMD [".output/server/index.mjs"]
