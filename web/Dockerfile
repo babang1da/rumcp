@@ -20,7 +20,7 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOST=0.0.0.0
 
-COPY --from=build --chown=nonroot:nonroot /app/.output ./.output
+COPY --from=build --chown=65532:65532 /app/.output ./.output
 
 EXPOSE 3000
 # Образ distroless: ENTRYPOINT уже `node`, поэтому только путь к скрипту (exec-форма).
