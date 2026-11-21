@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CabinetRouteImport } from './routes/cabinet'
 import { Route as HealthzRouteImport } from './routes/healthz'
+import { Route as PromptsRouteImport } from './routes/prompts'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as DocsClientRouteImport } from './routes/docs.$client'
@@ -30,6 +31,11 @@ const CabinetRoute = CabinetRouteImport.update({
 const HealthzRoute = HealthzRouteImport.update({
   id: '/healthz',
   path: '/healthz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PromptsRoute = PromptsRouteImport.update({
+  id: '/prompts',
+  path: '/prompts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cabinet': typeof CabinetRoute
   '/healthz': typeof HealthzRoute
+  '/prompts': typeof PromptsRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/docs/$client': typeof DocsClientRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cabinet': typeof CabinetRoute
   '/healthz': typeof HealthzRoute
+  '/prompts': typeof PromptsRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/docs/$client': typeof DocsClientRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/cabinet': typeof CabinetRoute
   '/healthz': typeof HealthzRoute
+  '/prompts': typeof PromptsRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/docs/$client': typeof DocsClientRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cabinet'
     | '/healthz'
+    | '/prompts'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/docs/$client'
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cabinet'
     | '/healthz'
+    | '/prompts'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/docs/$client'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cabinet'
     | '/healthz'
+    | '/prompts'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/docs/$client'
@@ -115,6 +127,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CabinetRoute: typeof CabinetRoute
   HealthzRoute: typeof HealthzRoute
+  PromptsRoute: typeof PromptsRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   DocsClientRoute: typeof DocsClientRoute
@@ -142,6 +155,13 @@ declare module '@tanstack/react-router' {
       path: '/healthz'
       fullPath: '/healthz'
       preLoaderRoute: typeof HealthzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prompts': {
+      id: '/prompts'
+      path: '/prompts'
+      fullPath: '/prompts'
+      preLoaderRoute: typeof PromptsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/robots.txt': {
@@ -179,6 +199,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CabinetRoute: CabinetRoute,
   HealthzRoute: HealthzRoute,
+  PromptsRoute: PromptsRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   DocsClientRoute: DocsClientRoute,
