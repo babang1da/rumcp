@@ -1,0 +1,18 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.babang1da/rumcp",
+  "title": "RuMCP",
+  "description": "Hosted MCP connector for Yandex Metrika and Webmaster. One endpoint, OAuth sign-in, zero setup.",
+  "version": "1.0.0",
+  "websiteUrl": "https://rumcp.212-108-82-65.sslip.io",
+  "repository": {
+    "url": "https://github.com/babang1da/rumcp",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://rumcp.212-108-82-65.sslip.io/mcp"
+    }
+  ]
+}
