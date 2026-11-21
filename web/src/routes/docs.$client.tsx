@@ -1,5 +1,6 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router'
 
+import { CodeSnippet } from '../components/CodeSnippet'
 import { CopyField } from '../components/CopyField'
 import { Layout, LoginButton } from '../components/Layout'
 import { docClients, findDoc } from '../content/docs'
@@ -52,9 +53,10 @@ function Doc() {
           ))}
         </ol>
         {doc.config && (
-          <pre className="code">
-            <code>{doc.config(mcpUrl)}</code>
-          </pre>
+          <div>
+            {doc.configHint && <p className="hint">{doc.configHint}</p>}
+            <CodeSnippet code={doc.config(mcpUrl)} file={doc.configFile!} />
+          </div>
         )}
         {doc.note && <p className="note">{doc.note}</p>}
         <p>
