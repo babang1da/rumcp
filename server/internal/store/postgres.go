@@ -244,6 +244,46 @@ func (p *Postgres) CreateLead(ctx context.Context, l Lead) error {
 	return nil
 }
 
+// Stats returns overall call counts and per-user call aggregates.
+func (p *Postgres) Stats(ctx context.Context) (Stats, error) {
+	var totalCalls int64
+	if err := p.pool.QueryRow(ctx, `select count(*) from call_log`).Scan(&totalCalls); err != nil {
+		return Stats{}, fmt.Errorf("store: stats total calls: %w", err)
+	}
+
+	const query = `
+		select u.id::text, u.login, u.email, count(c.id), min(c.ts), max(c.ts)
+		from call_log c
+		join users u on u.id = c.user_id
+		group by u.id, u.login, u.email
+		order by min(c.ts) asc, u.id asc`
+
+	rows, err := p.pool.Query(ctx, query)
+	if err != nil {
+		return Stats{}, fmt.Errorf("store: stats users: %w", err)
+	}
+	defer rows.Close()
+
+	users := make([]UserStats, 0)
+	for rows.Next() {
+		var u UserStats
+		if err := rows.Scan(&u.UserID, &u.Login, &u.Email, &u.Calls, &u.FirstCallAt, &u.LastCallAt); err != nil {
+			return Stats{}, fmt.Errorf("store: stats scan: %w", err)
+		}
+		u.FirstCallAt = u.FirstCallAt.UTC()
+		u.LastCallAt = u.LastCallAt.UTC()
+		users = append(users, u)
+	}
+	if err := rows.Err(); err != nil {
+		return Stats{}, fmt.Errorf("store: stats rows: %w", err)
+	}
+
+	return Stats{
+		TotalCalls: totalCalls,
+		Users:      users,
+	}, nil
+}
+
 func scanUser(row pgx.Row) (User, error) {
 	var u User
 	err := row.Scan(&u.ID, &u.YandexID, &u.Login, &u.Email, &u.Name, &u.CreatedAt)

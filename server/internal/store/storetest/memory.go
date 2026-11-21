@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -225,6 +226,62 @@ func (m *Memory) CreateLead(_ context.Context, l store.Lead) error {
 	l.CreatedAt = m.now()
 	m.leads = append(m.leads, l)
 	return nil
+}
+
+// Stats implements store.Repository.
+func (m *Memory) Stats(_ context.Context) (store.Stats, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	type userAgg struct {
+		calls int64
+		first time.Time
+		last  time.Time
+	}
+	userCalls := make(map[string]*userAgg)
+	for _, c := range m.calls {
+		agg := userCalls[c.userID]
+		if agg == nil {
+			agg = &userAgg{first: c.ts, last: c.ts}
+			userCalls[c.userID] = agg
+		}
+		agg.calls++
+		if c.ts.Before(agg.first) {
+			agg.first = c.ts
+		}
+		if c.ts.After(agg.last) {
+			agg.last = c.ts
+		}
+	}
+
+	usersByID := make(map[string]store.User, len(m.users))
+	for _, u := range m.users {
+		usersByID[u.ID] = u
+	}
+
+	users := make([]store.UserStats, 0, len(userCalls))
+	for userID, agg := range userCalls {
+		u := usersByID[userID]
+		users = append(users, store.UserStats{
+			UserID:      userID,
+			Login:       u.Login,
+			Email:       u.Email,
+			Calls:       agg.calls,
+			FirstCallAt: agg.first.UTC(),
+			LastCallAt:  agg.last.UTC(),
+		})
+	}
+	sort.Slice(users, func(i, j int) bool {
+		if users[i].FirstCallAt.Equal(users[j].FirstCallAt) {
+			return users[i].UserID < users[j].UserID
+		}
+		return users[i].FirstCallAt.Before(users[j].FirstCallAt)
+	})
+
+	return store.Stats{
+		TotalCalls: int64(len(m.calls)),
+		Users:      users,
+	}, nil
 }
 
 // Leads returns the stored leads, for assertions in tests.

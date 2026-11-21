@@ -11,7 +11,7 @@ import (
 func setCleanEnv(t *testing.T, values map[string]string) {
 	t.Helper()
 	for _, name := range []string{"DATABASE_URL", "PORT", "LOG_LEVEL", "BASE_URL", "TOKEN_ENCRYPTION_KEY",
-		"SESSION_SECRET", "YANDEX_CLIENT_ID", "YANDEX_CLIENT_SECRET", "YANDEX_TEST_TOKEN", "DAILY_LIMIT"} {
+		"SESSION_SECRET", "YANDEX_CLIENT_ID", "YANDEX_CLIENT_SECRET", "YANDEX_TEST_TOKEN", "DAILY_LIMIT", "STATS_TOKEN"} {
 		t.Setenv(name, "")
 	}
 	for name, value := range values {
@@ -168,5 +168,29 @@ func TestDevLoginNeedsTestTokenAndNoApplication(t *testing.T) {
 	}
 	if cfg.DevLoginEnabled() {
 		t.Fatal("DevLoginEnabled() = true while a Yandex application is configured")
+	}
+}
+
+func TestFromEnvStatsToken(t *testing.T) {
+	env := minimalEnv()
+	setCleanEnv(t, env)
+
+	cfg, err := FromEnv()
+	if err != nil {
+		t.Fatalf("FromEnv() without STATS_TOKEN error = %v", err)
+	}
+	if cfg.StatsToken != "" {
+		t.Errorf("StatsToken = %q, want empty string", cfg.StatsToken)
+	}
+
+	env["STATS_TOKEN"] = "secret-token-123"
+	setCleanEnv(t, env)
+
+	cfg, err = FromEnv()
+	if err != nil {
+		t.Fatalf("FromEnv() with STATS_TOKEN error = %v", err)
+	}
+	if cfg.StatsToken != "secret-token-123" {
+		t.Errorf("StatsToken = %q, want %q", cfg.StatsToken, "secret-token-123")
 	}
 }
