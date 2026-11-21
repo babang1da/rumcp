@@ -115,6 +115,7 @@ describe('sitemapXml', () => {
   it('перечисляет все публичные страницы абсолютными адресами', () => {
     expect(xml.match(/<loc>/g)).toHaveLength(PUBLIC_PAGES.length)
     expect(xml).toContain('<loc>https://rumcp.example/mcp/yandex-metrika</loc>')
+    expect(xml).toContain('<loc>https://rumcp.example/mcp/yandex-webmaster</loc>')
     expect(xml).toContain('<loc>https://rumcp.example/</loc>')
     expect(xml).not.toContain('/cabinet')
   })

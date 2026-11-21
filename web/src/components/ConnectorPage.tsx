@@ -77,7 +77,7 @@ export function ConnectorPage({ connector, mcpUrl }: { connector: Connector; mcp
 
         {connector.ready && (
           <p>
-            Готовы попробовать? <LoginButton />
+            Готовы попробовать? <LoginButton href="/oauth/yandex/login" />
           </p>
         )}
       </article>
