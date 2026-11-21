@@ -101,6 +101,9 @@ func NewRouterWithYandex(cfg config.Config, repo store.Repository, yandex auth.Y
 	mux.HandleFunc("GET /api/usage", apiHandler.Usage)
 	mux.HandleFunc("POST /api/leads", apiHandler.Leads)
 
+	// Статистика вызовов для замера метрик.
+	mux.HandleFunc("GET /api/stats", statsHandler(cfg.StatsToken, repo))
+
 	return mux, nil
 }
 
