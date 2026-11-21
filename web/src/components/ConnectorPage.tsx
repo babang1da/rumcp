@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 
 import { connectors } from '../content/connectors'
 import type { Connector } from '../content/connectors'
+import { ConnectBlock } from './ConnectBlock'
 import { CopyField } from './CopyField'
 import { Layout, LoginButton } from './Layout'
 import { LeadForm } from './LeadForm'
@@ -54,12 +55,7 @@ export function ConnectorPage({ connector, mcpUrl }: { connector: Connector; mcp
               <li key={step}>{step}</li>
             ))}
           </ol>
-          {connector.ready && (
-            <p className="hint">
-              Как добавить адрес в ассистента: <a href="/docs/claude">Claude</a>,{' '}
-              <a href="/docs/chatgpt">ChatGPT</a>, <a href="/docs/cursor">Cursor</a>.
-            </p>
-          )}
+          {connector.ready && <ConnectBlock mcpUrl={mcpUrl} />}
         </section>
 
         {!connector.ready && (
