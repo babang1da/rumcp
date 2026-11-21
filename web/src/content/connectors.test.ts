@@ -28,12 +28,24 @@ describe('connectors', () => {
 
   it('у каждой страницы есть h1, описание, инструменты, шаги и FAQ', () => {
     for (const connector of connectors) {
-      expect(connector.h1).toMatch(/^MCP для /)
+      expect(connector.h1).toMatch(/^MCP /)
       expect(connector.lead.length).toBeGreaterThan(60)
       expect(connector.tools.length).toBeGreaterThanOrEqual(4)
       expect(connector.steps.length).toBeGreaterThanOrEqual(3)
       expect(connector.faq.length).toBeGreaterThanOrEqual(4)
     }
+  })
+
+  it('содержит целевые SEO-запросы для Метрики и Вебмастера', () => {
+    const metrika = findConnector('yandex-metrika')!
+    expect(metrika.title).toContain('MCP коннектор Яндекс Метрика')
+    expect(metrika.description).toContain('MCP коннектор Яндекс Метрика')
+    expect(metrika.h1).toBe('MCP коннектор Яндекс Метрика')
+
+    const webmaster = findConnector('yandex-webmaster')!
+    expect(webmaster.title).toContain('MCP Яндекс Вебмастер')
+    expect(webmaster.description).toContain('MCP Яндекс Вебмастер')
+    expect(webmaster.h1).toBe('MCP Яндекс Вебмастер')
   })
 
   it('«скоро» только у Вордстата и Директа, у них есть service для заявки', () => {
