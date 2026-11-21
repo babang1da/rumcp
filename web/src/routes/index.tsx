@@ -42,6 +42,11 @@ function Home() {
             <li key={prompt}>{prompt}</li>
           ))}
         </ul>
+        <p className="hint">
+          Готовые вопросы с примерами ответов — в разделе{' '}
+          {/* Обычная ссылка: полная загрузка страницы ловится счётчиком Метрики. */}
+          <a href="/prompts">Сценарии и промпты</a>.
+        </p>
       </section>
 
       <section className="block" id="how" aria-labelledby="how-title">

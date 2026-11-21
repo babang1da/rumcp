@@ -94,6 +94,16 @@ h2 { font-size: 1.3rem; margin: 0 0 .75rem; letter-spacing: -.01em; }
   padding: .8rem 1rem; margin: 1.5rem 0; border-radius: 4px;
 }
 
+.scenario-task { margin: .25rem 0 1rem; }
+.dialog h3 { font-size: 1.02rem; margin: 1.5rem 0 .5rem; }
+.dialog-line {
+  margin: .5rem 0; padding: .7rem .9rem; border: 1px solid var(--line); border-radius: 6px; background: #fff;
+}
+.dialog-line[data-role='assistant'] { border-left: 3px solid var(--accent); }
+.dialog-role { display: block; font-weight: 600; font-size: .85rem; color: var(--muted); margin-bottom: .15rem; }
+.dialog-line[data-role='user'] .dialog-role { color: var(--ink); }
+.scenario .actions { margin-bottom: 0; }
+
 .lead-form { margin: 1rem 0 1.5rem; }
 .lead-form label { display: block; font-weight: 600; margin-bottom: .35rem; }
 .lead-form .error { margin: .5rem 0 0; }
