@@ -74,6 +74,8 @@ h2 { font-size: 1.3rem; margin: 0 0 .75rem; letter-spacing: -.01em; }
 
 .prompts, .connectors { list-style: none; padding: 0; margin: 0; }
 .prompts li { padding: .8rem 0 .8rem 1rem; border-left: 3px solid var(--accent); margin-bottom: .6rem; background: #fff; }
+.doc .prompts li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .5rem .75rem; }
+.doc .prompts li > span { flex: 1 1 16rem; }
 
 .steps { padding-left: 1.4rem; }
 .steps li { margin-bottom: .7rem; padding-left: .25rem; }

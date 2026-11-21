@@ -1,20 +1,34 @@
+import { useState } from 'react'
 import { Link, createFileRoute, notFound } from '@tanstack/react-router'
 
 import { CodeSnippet } from '../components/CodeSnippet'
 import { CopyField } from '../components/CopyField'
 import { Layout, LoginButton } from '../components/Layout'
-import { docClients, findDoc } from '../content/docs'
-import { getMcpUrl } from '../server/functions'
+import { docClients, examplePrompts, findDoc } from '../content/docs'
+import { howToJsonLd } from '../seo/jsonld'
+import { canonicalUrl, pageHead } from '../seo/pages'
+import { getMcpUrl, getSiteUrl } from '../server/functions'
 
 export const Route = createFileRoute('/docs/$client')({
   loader: async ({ params }) => {
     const doc = findDoc(params.client)
     if (!doc) throw notFound()
-    return { slug: doc.slug, mcpUrl: await getMcpUrl() }
+
+    const [siteUrl, mcpUrl] = await Promise.all([getSiteUrl(), getMcpUrl()])
+    return { slug: doc.slug, siteUrl, mcpUrl }
   },
-  head: ({ params }) => {
-    const doc = findDoc(params.client)
-    return { meta: doc ? [{ title: `${doc.title} — RuMCP` }, { name: 'description', content: doc.lead }] : [] }
+  head: ({ loaderData }) => {
+    if (!loaderData) return {}
+    const doc = findDoc(loaderData.slug)!
+    const url = canonicalUrl(loaderData.siteUrl, `/docs/${doc.slug}`)
+
+    return pageHead({
+      title: `${doc.title} — RuMCP`,
+      description: doc.lead,
+      path: `/docs/${doc.slug}`,
+      siteUrl: loaderData.siteUrl,
+      jsonLd: [howToJsonLd(doc, url)],
+    })
   },
   notFoundComponent: () => (
     <Layout>
@@ -59,10 +73,45 @@ function Doc() {
           </div>
         )}
         {doc.note && <p className="note">{doc.note}</p>}
+        <ExamplePrompts />
         <p>
           Нужен вход через Яндекс — без него ассистент не получит доступ к данным. <LoginButton>Войти через Яндекс</LoginButton>
         </p>
       </article>
     </Layout>
+  )
+}
+
+/** Примеры вопросов ассистенту: каждый копируется в буфер одной кнопкой. */
+function ExamplePrompts() {
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
+
+  async function copy(prompt: string, index: number) {
+    try {
+      await navigator.clipboard.writeText(prompt)
+      setCopiedIndex(index)
+      setTimeout(() => setCopiedIndex(null), 2000)
+    } catch {
+      // Буфер недоступен: вопрос можно выделить и скопировать вручную.
+    }
+  }
+
+  return (
+    <section className="block" aria-labelledby="prompts-title">
+      <h2 id="prompts-title">Примеры вопросов для ассистента</h2>
+      <ul className="prompts">
+        {examplePrompts.map((prompt, index) => (
+          <li key={prompt}>
+            <span>{prompt}</span>
+            <button type="button" className="button button-quiet" onClick={() => copy(prompt, index)}>
+              {copiedIndex === index ? 'Скопировано' : 'Скопировать'}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <span className="sr-only" role="status">
+        {copiedIndex !== null ? 'Вопрос скопирован' : ''}
+      </span>
+    </section>
   )
 }

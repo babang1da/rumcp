@@ -1,3 +1,4 @@
+import type { DocClient } from '../content/docs'
 import type { Connector } from '../content/connectors'
 
 /** Schema.org SoftwareApplication: что за сервис и сколько стоит. */
@@ -38,4 +39,21 @@ export function faqPageJsonLd(connector: Connector) {
 /** Разметка страницы коннектора: SoftwareApplication + FAQPage. */
 export function connectorJsonLd(connector: Connector, url: string): unknown[] {
   return [softwareApplicationJsonLd(connector, url), faqPageJsonLd(connector)]
+}
+
+/** Schema.org HowTo: шаги подключения ассистента на страницах /docs/$client. */
+export function howToJsonLd(doc: DocClient, url: string) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: doc.title,
+    description: doc.lead,
+    url,
+    inLanguage: 'ru',
+    step: doc.steps.map((step, index) => ({
+      '@type': 'HowToStep',
+      position: index + 1,
+      text: step,
+    })),
+  }
 }

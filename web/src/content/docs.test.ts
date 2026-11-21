@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { connectSetup, docClients, findDoc } from './docs'
+import { connectSetup, docClients, examplePrompts, findDoc } from './docs'
 
 describe('docs', () => {
   it('есть инструкции для Claude, ChatGPT и Cursor', () => {
@@ -45,6 +45,14 @@ describe('docs', () => {
     for (const doc of docClients) {
       expect(connectSetup[doc.slug].lead).toBeTruthy()
       expect(connectSetup[doc.slug].steps.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('примеры вопросов непустые и без повторов', () => {
+    expect(examplePrompts.length).toBeGreaterThan(0)
+    expect(new Set(examplePrompts).size).toBe(examplePrompts.length)
+    for (const prompt of examplePrompts) {
+      expect(prompt.trim()).toBe(prompt)
     }
   })
 
