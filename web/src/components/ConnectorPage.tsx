@@ -15,7 +15,7 @@ export function ConnectorPage({ connector, mcpUrl }: { connector: Connector; mcp
         {connectors.map((item) => (
           <Link
             key={item.slug}
-            to="/mcp/$slug"
+            to="/connectors/$slug"
             params={{ slug: item.slug }}
             activeProps={{ 'aria-current': 'page' }}
           >

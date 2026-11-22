@@ -22,7 +22,7 @@ export function canonicalUrl(siteUrl: string, path: string): string {
 export type PageHeadInput = {
   title: string
   description: string
-  /** Путь страницы, например `/mcp/yandex-metrika`. */
+  /** Путь страницы, например `/connectors/yandex-metrika`. */
   path: string
   /** Публичный адрес сервиса без слэша на конце. */
   siteUrl: string
