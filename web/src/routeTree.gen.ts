@@ -15,6 +15,7 @@ import { Route as HealthzRouteImport } from './routes/healthz'
 import { Route as PromptsRouteImport } from './routes/prompts'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as DocsClientRouteImport } from './routes/docs.$client'
 import { Route as McpSlugRouteImport } from './routes/mcp.$slug'
 
@@ -48,6 +49,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TemplatesRoute = TemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DocsClientRoute = DocsClientRouteImport.update({
   id: '/docs/$client',
   path: '/docs/$client',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/prompts': typeof PromptsRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/templates': typeof TemplatesRoute
   '/docs/$client': typeof DocsClientRoute
   '/mcp/$slug': typeof McpSlugRoute
 }
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/prompts': typeof PromptsRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/templates': typeof TemplatesRoute
   '/docs/$client': typeof DocsClientRoute
   '/mcp/$slug': typeof McpSlugRoute
 }
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/prompts': typeof PromptsRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/templates': typeof TemplatesRoute
   '/docs/$client': typeof DocsClientRoute
   '/mcp/$slug': typeof McpSlugRoute
 }
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/prompts'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/templates'
     | '/docs/$client'
     | '/mcp/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/prompts'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/templates'
     | '/docs/$client'
     | '/mcp/$slug'
   id:
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/prompts'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/templates'
     | '/docs/$client'
     | '/mcp/$slug'
   fileRoutesById: FileRoutesById
@@ -130,6 +142,7 @@ export interface RootRouteChildren {
   PromptsRoute: typeof PromptsRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TemplatesRoute: typeof TemplatesRoute
   DocsClientRoute: typeof DocsClientRoute
   McpSlugRoute: typeof McpSlugRoute
 }
@@ -178,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/templates': {
+      id: '/templates'
+      path: '/templates'
+      fullPath: '/templates'
+      preLoaderRoute: typeof TemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/docs/$client': {
       id: '/docs/$client'
       path: '/docs/$client'
@@ -202,6 +222,7 @@ const rootRouteChildren: RootRouteChildren = {
   PromptsRoute: PromptsRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TemplatesRoute: TemplatesRoute,
   DocsClientRoute: DocsClientRoute,
   McpSlugRoute: McpSlugRoute,
 }
