@@ -14,9 +14,9 @@ describe('connectors', () => {
     ])
   })
 
-  it('пути страниц совпадают со slug и лежат в /mcp/', () => {
+  it('пути страниц совпадают со slug и лежат в /connectors/', () => {
     for (const connector of connectors) {
-      expect(connector.path).toBe(`/mcp/${connector.slug}`)
+      expect(connector.path).toBe(`/connectors/${connector.slug}`)
     }
   })
 

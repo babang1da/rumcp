@@ -40,7 +40,7 @@ export type Connector = {
 export const connectors: Connector[] = [
   {
     slug: 'yandex-metrika',
-    path: '/mcp/yandex-metrika',
+    path: '/connectors/yandex-metrika',
     service: 'metrika',
     name: 'Яндекс Метрика',
     ready: true,
@@ -112,7 +112,7 @@ export const connectors: Connector[] = [
   },
   {
     slug: 'yandex-webmaster',
-    path: '/mcp/yandex-webmaster',
+    path: '/connectors/yandex-webmaster',
     service: 'webmaster',
     name: 'Яндекс Вебмастер',
     ready: true,
@@ -185,7 +185,7 @@ export const connectors: Connector[] = [
   },
   {
     slug: 'yandex-wordstat',
-    path: '/mcp/yandex-wordstat',
+    path: '/connectors/yandex-wordstat',
     service: 'wordstat',
     name: 'Яндекс Вордстат',
     ready: false,
@@ -242,7 +242,7 @@ export const connectors: Connector[] = [
   },
   {
     slug: 'yandex-direct',
-    path: '/mcp/yandex-direct',
+    path: '/connectors/yandex-direct',
     service: 'direct',
     name: 'Яндекс Директ',
     ready: false,
@@ -301,7 +301,7 @@ export const connectors: Connector[] = [
   },
   {
     slug: 'metrika-for-claude',
-    path: '/mcp/metrika-for-claude',
+    path: '/connectors/metrika-for-claude',
     service: 'metrika',
     name: 'Метрика в Claude Desktop',
     ready: true,
@@ -373,7 +373,7 @@ export const connectors: Connector[] = [
   },
   {
     slug: 'webmaster-for-agents',
-    path: '/mcp/webmaster-for-agents',
+    path: '/connectors/webmaster-for-agents',
     service: 'webmaster',
     name: 'Вебмастер для агентов',
     ready: true,

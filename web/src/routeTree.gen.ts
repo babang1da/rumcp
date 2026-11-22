@@ -16,8 +16,8 @@ import { Route as PromptsRouteImport } from './routes/prompts'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TemplatesRouteImport } from './routes/templates'
+import { Route as ConnectorsSlugRouteImport } from './routes/connectors.$slug'
 import { Route as DocsClientRouteImport } from './routes/docs.$client'
-import { Route as McpSlugRouteImport } from './routes/mcp.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -54,14 +54,14 @@ const TemplatesRoute = TemplatesRouteImport.update({
   path: '/templates',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConnectorsSlugRoute = ConnectorsSlugRouteImport.update({
+  id: '/connectors/$slug',
+  path: '/connectors/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DocsClientRoute = DocsClientRouteImport.update({
   id: '/docs/$client',
   path: '/docs/$client',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const McpSlugRoute = McpSlugRouteImport.update({
-  id: '/mcp/$slug',
-  path: '/mcp/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -73,8 +73,8 @@ export interface FileRoutesByFullPath {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/templates': typeof TemplatesRoute
+  '/connectors/$slug': typeof ConnectorsSlugRoute
   '/docs/$client': typeof DocsClientRoute
-  '/mcp/$slug': typeof McpSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -84,8 +84,8 @@ export interface FileRoutesByTo {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/templates': typeof TemplatesRoute
+  '/connectors/$slug': typeof ConnectorsSlugRoute
   '/docs/$client': typeof DocsClientRoute
-  '/mcp/$slug': typeof McpSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -96,8 +96,8 @@ export interface FileRoutesById {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/templates': typeof TemplatesRoute
+  '/connectors/$slug': typeof ConnectorsSlugRoute
   '/docs/$client': typeof DocsClientRoute
-  '/mcp/$slug': typeof McpSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -109,8 +109,8 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/templates'
+    | '/connectors/$slug'
     | '/docs/$client'
-    | '/mcp/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -120,8 +120,8 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/templates'
+    | '/connectors/$slug'
     | '/docs/$client'
-    | '/mcp/$slug'
   id:
     | '__root__'
     | '/'
@@ -131,8 +131,8 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/templates'
+    | '/connectors/$slug'
     | '/docs/$client'
-    | '/mcp/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -143,8 +143,8 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TemplatesRoute: typeof TemplatesRoute
+  ConnectorsSlugRoute: typeof ConnectorsSlugRoute
   DocsClientRoute: typeof DocsClientRoute
-  McpSlugRoute: typeof McpSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -198,18 +198,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TemplatesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/connectors/$slug': {
+      id: '/connectors/$slug'
+      path: '/connectors/$slug'
+      fullPath: '/connectors/$slug'
+      preLoaderRoute: typeof ConnectorsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/docs/$client': {
       id: '/docs/$client'
       path: '/docs/$client'
       fullPath: '/docs/$client'
       preLoaderRoute: typeof DocsClientRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mcp/$slug': {
-      id: '/mcp/$slug'
-      path: '/mcp/$slug'
-      fullPath: '/mcp/$slug'
-      preLoaderRoute: typeof McpSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -223,8 +223,8 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TemplatesRoute: TemplatesRoute,
+  ConnectorsSlugRoute: ConnectorsSlugRoute,
   DocsClientRoute: DocsClientRoute,
-  McpSlugRoute: McpSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
