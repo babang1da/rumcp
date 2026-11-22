@@ -155,6 +155,8 @@ describe('sitemapXml', () => {
     expect(xml.match(/<loc>/g)).toHaveLength(PUBLIC_PAGES.length)
     expect(xml).toContain('<loc>https://rumcp.example/mcp/yandex-metrika</loc>')
     expect(xml).toContain('<loc>https://rumcp.example/mcp/yandex-webmaster</loc>')
+    expect(xml).toContain('<loc>https://rumcp.example/mcp/metrika-for-claude</loc>')
+    expect(xml).toContain('<loc>https://rumcp.example/mcp/webmaster-for-agents</loc>')
     expect(xml).toContain('<loc>https://rumcp.example/</loc>')
     expect(xml).not.toContain('/cabinet')
   })
