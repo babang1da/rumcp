@@ -85,6 +85,22 @@ type Usage struct {
 	ByConnector map[string]int
 }
 
+// UserStats summarizes MCP calls made by one user.
+type UserStats struct {
+	UserID      string    `json:"user_id"`
+	Login       string    `json:"login"`
+	Email       string    `json:"email"`
+	Calls       int64     `json:"calls"`
+	FirstCallAt time.Time `json:"first_call_at"`
+	LastCallAt  time.Time `json:"last_call_at"`
+}
+
+// Stats holds service-wide call statistics for metric tracking.
+type Stats struct {
+	TotalCalls int64       `json:"total_calls"`
+	Users      []UserStats `json:"users"`
+}
+
 // Repository is the data access contract of the service.
 type Repository interface {
 	UpsertUser(ctx context.Context, u User) (User, error)
@@ -111,4 +127,6 @@ type Repository interface {
 	Usage(ctx context.Context, userID string, since time.Time) (Usage, error)
 
 	CreateLead(ctx context.Context, l Lead) error
+
+	Stats(ctx context.Context) (Stats, error)
 }

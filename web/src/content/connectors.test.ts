@@ -9,6 +9,8 @@ describe('connectors', () => {
       'yandex-webmaster',
       'yandex-wordstat',
       'yandex-direct',
+      'metrika-for-claude',
+      'webmaster-for-agents',
     ])
   })
 
@@ -28,11 +30,47 @@ describe('connectors', () => {
 
   it('у каждой страницы есть h1, описание, инструменты, шаги и FAQ', () => {
     for (const connector of connectors) {
-      expect(connector.h1).toMatch(/^MCP для /)
+      expect(connector.h1).toMatch(/^MCP /)
       expect(connector.lead.length).toBeGreaterThan(60)
       expect(connector.tools.length).toBeGreaterThanOrEqual(4)
       expect(connector.steps.length).toBeGreaterThanOrEqual(3)
       expect(connector.faq.length).toBeGreaterThanOrEqual(4)
+    }
+  })
+
+  it('содержит целевые SEO-запросы для Метрики и Вебмастера', () => {
+    const metrika = findConnector('yandex-metrika')!
+    expect(metrika.title).toContain('MCP коннектор Яндекс Метрика')
+    expect(metrika.description).toContain('MCP коннектор Яндекс Метрика')
+    expect(metrika.h1).toBe('MCP коннектор Яндекс Метрика')
+
+    const webmaster = findConnector('yandex-webmaster')!
+    expect(webmaster.title).toContain('MCP Яндекс Вебмастер')
+    expect(webmaster.description).toContain('MCP Яндекс Вебмастер')
+    expect(webmaster.h1).toBe('MCP Яндекс Вебмастер')
+  })
+
+  it('новые страницы ведут на реальные инструменты Метрики и Вебмастера под целевые запросы', () => {
+    const forClaude = findConnector('metrika-for-claude')!
+    expect(forClaude.ready).toBe(true)
+    expect(forClaude.h1).toMatch(/^MCP /)
+    expect(forClaude.title).toContain('Claude Desktop')
+    expect(forClaude.description).toContain('Метрику к Claude Desktop')
+    expect(forClaude.tools.map((t) => t.name)).toEqual(
+      findConnector('yandex-metrika')!.tools.map((t) => t.name),
+    )
+
+    const forAgents = findConnector('webmaster-for-agents')!
+    expect(forAgents.ready).toBe(true)
+    expect(forAgents.h1).toMatch(/^MCP /)
+    expect(forAgents.title).toContain('агентов')
+    expect(forAgents.description).toContain('для ИИ-агентов')
+    expect(forAgents.tools.map((t) => t.name)).toEqual(
+      findConnector('yandex-webmaster')!.tools.map((t) => t.name),
+    )
+
+    for (const connector of [forClaude, forAgents]) {
+      expect(connector.tools.some((t) => /Директ|Вордстат/.test(t.name))).toBe(false)
     }
   })
 

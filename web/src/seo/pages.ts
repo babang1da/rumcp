@@ -7,6 +7,8 @@ import { docClients } from '../content/docs'
  */
 export const PUBLIC_PAGES: string[] = [
   '/',
+  '/prompts',
+  '/templates',
   ...connectors.map((connector) => connector.path),
   ...docClients.map((doc) => `/docs/${doc.slug}`),
 ]

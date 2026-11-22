@@ -228,6 +228,69 @@ func TestStoreRoundTrip(t *testing.T) {
 	}
 }
 
+func TestPostgresStats(t *testing.T) {
+	repo := testStore(t)
+	ctx := context.Background()
+
+	if err := migrations.Up(ctx, repo.Pool()); err != nil {
+		t.Fatalf("migrations.Up: %v", err)
+	}
+
+	// Empty stats
+	emptyStats, err := repo.Stats(ctx)
+	if err != nil {
+		t.Fatalf("repo.Stats on empty: %v", err)
+	}
+	if emptyStats.TotalCalls != 0 || len(emptyStats.Users) != 0 {
+		t.Errorf("empty stats = %+v, want 0 calls and 0 users", emptyStats)
+	}
+
+	u1, err := repo.UpsertUser(ctx, store.User{YandexID: "y100", Login: "user1", Email: "u1@example.com", Name: "User 1"})
+	if err != nil {
+		t.Fatalf("UpsertUser: %v", err)
+	}
+	u2, err := repo.UpsertUser(ctx, store.User{YandexID: "y200", Login: "user2", Email: "u2@example.com", Name: "User 2"})
+	if err != nil {
+		t.Fatalf("UpsertUser: %v", err)
+	}
+	// u3 has no calls
+	_, err = repo.UpsertUser(ctx, store.User{YandexID: "y300", Login: "user3", Email: "u3@example.com", Name: "User 3"})
+	if err != nil {
+		t.Fatalf("UpsertUser: %v", err)
+	}
+
+	if err := repo.RecordCall(ctx, u1.ID, "metrika", "get_counters", "ok"); err != nil {
+		t.Fatalf("RecordCall: %v", err)
+	}
+	if err := repo.RecordCall(ctx, u1.ID, "metrika", "get_reports", "ok"); err != nil {
+		t.Fatalf("RecordCall: %v", err)
+	}
+	if err := repo.RecordCall(ctx, u2.ID, "webmaster", "list_hosts", "ok"); err != nil {
+		t.Fatalf("RecordCall: %v", err)
+	}
+
+	stats, err := repo.Stats(ctx)
+	if err != nil {
+		t.Fatalf("repo.Stats: %v", err)
+	}
+
+	if stats.TotalCalls != 3 {
+		t.Errorf("TotalCalls = %d, want 3", stats.TotalCalls)
+	}
+	if len(stats.Users) != 2 {
+		t.Fatalf("len(Users) = %d, want 2", len(stats.Users))
+	}
+	if stats.Users[0].UserID != u1.ID || stats.Users[0].Calls != 2 {
+		t.Errorf("u1 stats mismatch: %+v", stats.Users[0])
+	}
+	if stats.Users[0].Login != "user1" || stats.Users[0].Email != "u1@example.com" {
+		t.Errorf("u1 user data mismatch: %+v", stats.Users[0])
+	}
+	if stats.Users[1].UserID != u2.ID || stats.Users[1].Calls != 1 {
+		t.Errorf("u2 stats mismatch: %+v", stats.Users[1])
+	}
+}
+
 type fakeYandex struct{ token string }
 
 func (f fakeYandex) Exchange(context.Context, string, string) (auth.YandexToken, error) {

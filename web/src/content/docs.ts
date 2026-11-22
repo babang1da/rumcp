@@ -6,6 +6,18 @@ export type DocClient = {
   steps: string[]
   note?: string
   config?: (mcpUrl: string) => string
+  /** Имя файла конфигурации, показывается в шапке блока кода. */
+  configFile?: string
+  /** Подводка перед блоком конфигурации, когда файл — не основной путь из шагов. */
+  configHint?: string
+  /** Подпись вкладки в блоке подключения, если отличается от name. */
+  tabName?: string
+}
+
+/** Компактный текст блока подключения на страницах коннекторов. */
+export type ConnectSetup = {
+  lead: string
+  steps: string[]
 }
 
 export const docClients: DocClient[] = [
@@ -22,6 +34,11 @@ export const docClients: DocClient[] = [
       'Разрешите доступ к Метрике и Вебмастеру. Коннектор появится в списке, и Claude сможет им пользоваться.',
     ],
     note: 'В корпоративных тарифах коннекторы добавляет администратор организации.',
+    tabName: 'Claude Desktop',
+    configFile: 'claude_desktop_config.json',
+    configHint: 'В Claude Desktop сервер можно добавить и через файл конфигурации:',
+    config: (mcpUrl) =>
+      JSON.stringify({ mcpServers: { rumcp: { type: 'http', url: mcpUrl } } }, null, 2),
   },
   {
     slug: 'chatgpt',
@@ -50,8 +67,35 @@ export const docClients: DocClient[] = [
     ],
     config: (mcpUrl) =>
       JSON.stringify({ mcpServers: { rumcp: { url: mcpUrl } } }, null, 2),
+    configFile: 'mcp.json',
   },
 ]
+
+/** Тексты вкладок блока подключения на страницах коннекторов. */
+export const connectSetup: Record<DocClient['slug'], ConnectSetup> = {
+  claude: {
+    lead: 'Настройки → Коннекторы → «Добавить пользовательский коннектор» — вставьте адрес MCP. Или добавьте сервер через файл конфигурации:',
+    steps: [
+      'Откройте файл: Настройки → Разработчик → «Изменить конфигурацию».',
+      'Сохраните конфиг и перезапустите Claude Desktop — при подключении откроется вход через Яндекс.',
+    ],
+  },
+  chatgpt: {
+    lead: 'ChatGPT подключает удалённые коннекторы через режим разработчика — файл конфигурации не нужен, только адрес MCP.',
+    steps: [
+      'Настройки → Приложения и коннекторы → Дополнительно: включите «Режим разработчика».',
+      'Нажмите «Создать»: название «RuMCP», адрес MCP, способ входа OAuth.',
+      'В новом чате включите RuMCP через меню «+».',
+    ],
+  },
+  cursor: {
+    lead: 'Cursor: Settings → Tools & MCP → Add Custom MCP — откроется файл `mcp.json`. Добавьте сервер:',
+    steps: [
+      'Сохраните `mcp.json` — RuMCP появится в списке серверов.',
+      'Нажмите кнопку входа рядом с RuMCP и войдите через Яндекс.',
+    ],
+  },
+}
 
 export function findDoc(slug: string): DocClient | undefined {
   return docClients.find((doc) => doc.slug === slug)

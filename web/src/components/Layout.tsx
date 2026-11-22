@@ -14,6 +14,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <Link to="/docs/$client" params={{ client: 'claude' }}>
             Инструкции
           </Link>
+          <Link to="/templates">Шаблоны</Link>
           <Link to="/cabinet">Кабинет</Link>
         </nav>
       </header>
@@ -26,9 +27,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 /** Вход идёт на сервис Go, поэтому обычная ссылка, а не маршрут роутера. */
-export function LoginButton({ children = 'Войти через Яндекс' }: { children?: React.ReactNode }) {
+export function LoginButton({
+  children = 'Войти через Яндекс',
+  href = '/oauth/yandex/login',
+}: {
+  children?: React.ReactNode
+  href?: string
+}) {
   return (
-    <a className="button" href="/oauth/yandex/login">
+    <a className="button" href={href}>
       {children}
     </a>
   )

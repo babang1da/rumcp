@@ -34,6 +34,9 @@ type Config struct {
 	YandexTestToken string
 	// DailyLimit — вызовов MCP на пользователя в сутки (DAILY_LIMIT).
 	DailyLimit int
+	// StatsToken — токен доступа к GET /api/stats (STATS_TOKEN).
+	// Если пуст, эндпоинт закрыт (401), но сервис стартует без ошибок.
+	StatsToken string
 }
 
 // FromEnv читает конфигурацию из окружения. PORT и LOG_LEVEL необязательны,
@@ -48,6 +51,7 @@ func FromEnv() (Config, error) {
 		YandexClientSecret: os.Getenv("YANDEX_CLIENT_SECRET"),
 		YandexTestToken:    os.Getenv("YANDEX_TEST_TOKEN"),
 		DailyLimit:         100,
+		StatsToken:         os.Getenv("STATS_TOKEN"),
 	}
 
 	if port := os.Getenv("PORT"); port != "" {

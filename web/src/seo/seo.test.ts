@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { connectors } from '../content/connectors'
-import { connectorJsonLd, faqPageJsonLd, softwareApplicationJsonLd } from './jsonld'
+import { docClients } from '../content/docs'
+import { connectorJsonLd, faqPageJsonLd, howToJsonLd, softwareApplicationJsonLd } from './jsonld'
 import { PUBLIC_PAGES, canonicalUrl, pageHead } from './pages'
 import { robotsTxt, sitemapXml } from './sitemap'
 
@@ -103,6 +104,44 @@ describe('jsonld', () => {
   })
 })
 
+describe('howToJsonLd', () => {
+  const doc = docClients[0]
+  const url = canonicalUrl(site, `/docs/${doc.slug}`)
+
+  it('HowTo — валидный JSON с типом, адресом и языком', () => {
+    const jsonLd = howToJsonLd(doc, url)
+    expect(JSON.parse(JSON.stringify(jsonLd))).toMatchObject({
+      '@context': 'https://schema.org',
+      '@type': 'HowTo',
+      url,
+      inLanguage: 'ru',
+      name: doc.title,
+      description: doc.lead,
+    })
+  })
+
+  it('перечисляет все шаги инструкции по порядку', () => {
+    const jsonLd = howToJsonLd(doc, url)
+    expect(jsonLd.step).toHaveLength(doc.steps.length)
+    expect(jsonLd.step[0]).toEqual({
+      '@type': 'HowToStep',
+      position: 1,
+      text: doc.steps[0],
+    })
+    expect(jsonLd.step.map((step) => step.position)).toEqual(
+      doc.steps.map((_, index) => index + 1),
+    )
+  })
+
+  it('для каждой инструкции — валидный JSON без undefined', () => {
+    for (const d of docClients) {
+      const json = JSON.stringify(howToJsonLd(d, canonicalUrl(site, `/docs/${d.slug}`)))
+      expect(json).not.toContain('undefined')
+      expect(JSON.parse(json)).toBeTruthy()
+    }
+  })
+})
+
 describe('sitemapXml', () => {
   const xml = sitemapXml(site)
 
@@ -115,6 +154,9 @@ describe('sitemapXml', () => {
   it('перечисляет все публичные страницы абсолютными адресами', () => {
     expect(xml.match(/<loc>/g)).toHaveLength(PUBLIC_PAGES.length)
     expect(xml).toContain('<loc>https://rumcp.example/mcp/yandex-metrika</loc>')
+    expect(xml).toContain('<loc>https://rumcp.example/mcp/yandex-webmaster</loc>')
+    expect(xml).toContain('<loc>https://rumcp.example/mcp/metrika-for-claude</loc>')
+    expect(xml).toContain('<loc>https://rumcp.example/mcp/webmaster-for-agents</loc>')
     expect(xml).toContain('<loc>https://rumcp.example/</loc>')
     expect(xml).not.toContain('/cabinet')
   })
