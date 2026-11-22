@@ -157,6 +157,8 @@ describe('sitemapXml', () => {
     expect(xml).toContain('<loc>https://rumcp.example/connectors/yandex-webmaster</loc>')
     expect(xml).toContain('<loc>https://rumcp.example/connectors/metrika-for-claude</loc>')
     expect(xml).toContain('<loc>https://rumcp.example/connectors/webmaster-for-agents</loc>')
+    expect(xml).toContain('<loc>https://rumcp.example/connectors/wordstat-for-claude</loc>')
+    expect(xml).toContain('<loc>https://rumcp.example/connectors/direct-for-claude</loc>')
     expect(xml).toContain('<loc>https://rumcp.example/</loc>')
     expect(xml).not.toContain('/cabinet')
   })

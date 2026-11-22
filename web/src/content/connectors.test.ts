@@ -11,6 +11,8 @@ describe('connectors', () => {
       'yandex-direct',
       'metrika-for-claude',
       'webmaster-for-agents',
+      'wordstat-for-claude',
+      'direct-for-claude',
     ])
   })
 
@@ -74,9 +76,30 @@ describe('connectors', () => {
     }
   })
 
+  it('страницы «для Claude» про Вордстат и Директ честно «скоро», как и их коннекторы', () => {
+    for (const [slug, base, word] of [
+      ['wordstat-for-claude', 'yandex-wordstat', 'Вордстат'],
+      ['direct-for-claude', 'yandex-direct', 'Директ'],
+    ] as const) {
+      const page = findConnector(slug)!
+      expect(page.ready).toBe(findConnector(base)!.ready)
+      expect(page.service).toBe(findConnector(base)!.service)
+      expect(page.h1).toMatch(/^MCP /)
+      expect(page.title).toContain('Claude')
+      expect(page.title).toContain(word)
+      expect(page.title.length).toBeLessThanOrEqual(60)
+      expect(page.description.length).toBeLessThanOrEqual(160)
+    }
+  })
+
   it('«скоро» только у Вордстата и Директа, у них есть service для заявки', () => {
     const soon = connectors.filter((c) => !c.ready).map((c) => c.slug)
-    expect(soon).toEqual(['yandex-wordstat', 'yandex-direct'])
+    expect(soon).toEqual([
+      'yandex-wordstat',
+      'yandex-direct',
+      'wordstat-for-claude',
+      'direct-for-claude',
+    ])
 
     for (const connector of connectors) {
       expect(connector.service).toBeTruthy()
