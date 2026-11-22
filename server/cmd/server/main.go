@@ -15,6 +15,7 @@ import (
 	"github.com/babang1da/rumcp/server/internal/config"
 	"github.com/babang1da/rumcp/server/internal/httpapi"
 	"github.com/babang1da/rumcp/server/internal/store"
+	"github.com/babang1da/rumcp/server/migrations"
 )
 
 func main() {
@@ -36,6 +37,11 @@ func main() {
 		os.Exit(1)
 	}
 	defer repo.Close()
+
+	if err := migrations.Up(ctx, repo.Pool()); err != nil {
+		logger.Error("migrations", "error", err)
+		os.Exit(1)
+	}
 
 	router, err := httpapi.NewRouter(cfg, repo)
 	if err != nil {
