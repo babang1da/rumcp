@@ -9,6 +9,8 @@ describe('connectors', () => {
       'yandex-webmaster',
       'yandex-wordstat',
       'yandex-direct',
+      'metrika-for-claude',
+      'webmaster-for-agents',
     ])
   })
 
@@ -46,6 +48,30 @@ describe('connectors', () => {
     expect(webmaster.title).toContain('MCP Яндекс Вебмастер')
     expect(webmaster.description).toContain('MCP Яндекс Вебмастер')
     expect(webmaster.h1).toBe('MCP Яндекс Вебмастер')
+  })
+
+  it('новые страницы ведут на реальные инструменты Метрики и Вебмастера под целевые запросы', () => {
+    const forClaude = findConnector('metrika-for-claude')!
+    expect(forClaude.ready).toBe(true)
+    expect(forClaude.h1).toMatch(/^MCP /)
+    expect(forClaude.title).toContain('Claude Desktop')
+    expect(forClaude.description).toContain('Метрику к Claude Desktop')
+    expect(forClaude.tools.map((t) => t.name)).toEqual(
+      findConnector('yandex-metrika')!.tools.map((t) => t.name),
+    )
+
+    const forAgents = findConnector('webmaster-for-agents')!
+    expect(forAgents.ready).toBe(true)
+    expect(forAgents.h1).toMatch(/^MCP /)
+    expect(forAgents.title).toContain('агентов')
+    expect(forAgents.description).toContain('для ИИ-агентов')
+    expect(forAgents.tools.map((t) => t.name)).toEqual(
+      findConnector('yandex-webmaster')!.tools.map((t) => t.name),
+    )
+
+    for (const connector of [forClaude, forAgents]) {
+      expect(connector.tools.some((t) => /Директ|Вордстат/.test(t.name))).toBe(false)
+    }
   })
 
   it('«скоро» только у Вордстата и Директа, у них есть service для заявки', () => {
