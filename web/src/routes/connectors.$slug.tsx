@@ -7,7 +7,7 @@ import { connectorJsonLd } from '../seo/jsonld'
 import { canonicalUrl, pageHead } from '../seo/pages'
 import { getMcpUrl, getSiteUrl } from '../server/functions'
 
-export const Route = createFileRoute('/mcp/$slug')({
+export const Route = createFileRoute('/connectors/$slug')({
   loader: async ({ params }) => {
     const connector = findConnector(params.slug)
     if (!connector) throw notFound()

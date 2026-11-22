@@ -27,8 +27,8 @@ describe('PUBLIC_PAGES', () => {
 
 describe('canonicalUrl', () => {
   it('склеивает адрес без двойных слэшей', () => {
-    expect(canonicalUrl('https://rumcp.example/', '/mcp/yandex-metrika')).toBe(
-      'https://rumcp.example/mcp/yandex-metrika',
+    expect(canonicalUrl('https://rumcp.example/', '/connectors/yandex-metrika')).toBe(
+      'https://rumcp.example/connectors/yandex-metrika',
     )
   })
 })
@@ -37,7 +37,7 @@ describe('pageHead', () => {
   const head = pageHead({
     title: 'MCP для Яндекс Метрики — RuMCP',
     description: 'Описание страницы.',
-    path: '/mcp/yandex-metrika',
+    path: '/connectors/yandex-metrika',
     siteUrl: site,
   })
 
@@ -48,7 +48,7 @@ describe('pageHead', () => {
 
   it('ставит абсолютный canonical', () => {
     expect(head.links).toEqual([
-      { rel: 'canonical', href: 'https://rumcp.example/mcp/yandex-metrika' },
+      { rel: 'canonical', href: 'https://rumcp.example/connectors/yandex-metrika' },
     ])
   })
 
@@ -58,7 +58,7 @@ describe('pageHead', () => {
     }
     expect(head.meta).toContainEqual({
       property: 'og:url',
-      content: 'https://rumcp.example/mcp/yandex-metrika',
+      content: 'https://rumcp.example/connectors/yandex-metrika',
     })
   })
 
@@ -153,10 +153,10 @@ describe('sitemapXml', () => {
 
   it('перечисляет все публичные страницы абсолютными адресами', () => {
     expect(xml.match(/<loc>/g)).toHaveLength(PUBLIC_PAGES.length)
-    expect(xml).toContain('<loc>https://rumcp.example/mcp/yandex-metrika</loc>')
-    expect(xml).toContain('<loc>https://rumcp.example/mcp/yandex-webmaster</loc>')
-    expect(xml).toContain('<loc>https://rumcp.example/mcp/metrika-for-claude</loc>')
-    expect(xml).toContain('<loc>https://rumcp.example/mcp/webmaster-for-agents</loc>')
+    expect(xml).toContain('<loc>https://rumcp.example/connectors/yandex-metrika</loc>')
+    expect(xml).toContain('<loc>https://rumcp.example/connectors/yandex-webmaster</loc>')
+    expect(xml).toContain('<loc>https://rumcp.example/connectors/metrika-for-claude</loc>')
+    expect(xml).toContain('<loc>https://rumcp.example/connectors/webmaster-for-agents</loc>')
     expect(xml).toContain('<loc>https://rumcp.example/</loc>')
     expect(xml).not.toContain('/cabinet')
   })
