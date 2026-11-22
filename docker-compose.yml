@@ -33,6 +33,7 @@ services:
       YANDEX_CLIENT_ID: ${YANDEX_CLIENT_ID:-}
       YANDEX_CLIENT_SECRET: ${YANDEX_CLIENT_SECRET:-}
       YANDEX_TEST_TOKEN: ${YANDEX_TEST_TOKEN:-}
+      STATS_TOKEN: ${STATS_TOKEN:-}
     depends_on:
       postgres:
         condition: service_healthy
