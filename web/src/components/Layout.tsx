@@ -14,6 +14,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <Link to="/docs/$client" params={{ client: 'claude' }}>
             Инструкции
           </Link>
+          <Link to="/templates">Шаблоны</Link>
           <Link to="/cabinet">Кабинет</Link>
         </nav>
       </header>
